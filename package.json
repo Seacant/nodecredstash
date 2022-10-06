@@ -14,7 +14,7 @@
   "scripts": {
     "test": "npm run lint && jest",
     "lint": "eslint .",
-    "prepublishOnly": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json",
     "clean": "tsc --build --clean; rm -rf tsconfig.build.tsbuildinfo tsconfig.tsbuildinfo"
   },
   "keywords": [
