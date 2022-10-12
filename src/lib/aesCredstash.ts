@@ -42,7 +42,7 @@ const openAesCtr = (
   key: Uint8Array,
   nonce: Uint8Array,
   ciphertext: Uint8Array,
-  expectedHmac: string,
+  expectedHmac: string | Uint8Array,
   digestMethod: string,
   name: string,
 ) => {
@@ -50,7 +50,13 @@ const openAesCtr = (
   const bits = dataKey.length * 8;
   const hmac = getHmacKey(hmacKey, ciphertext, digestMethod);
 
-  if (hmac !== expectedHmac) {
+  // Unicreds is sending a byte array of the hex string, so we need to unwrap it
+  let actualExpectedHmac = expectedHmac;
+  if (expectedHmac instanceof Uint8Array) {
+    actualExpectedHmac = String.fromCharCode(...expectedHmac)
+  }
+
+  if (hmac !== actualExpectedHmac) {
     throw new Error(`Computed HMAC on ${name} does not match stored HMAC`);
   }
 
@@ -95,6 +101,11 @@ export const openAesCtrLegacy = async (
   const key = await keyService.decrypt(record.key);
   const digestMethod = record.digest || DEFAULT_DIGEST;
   const ciphertext = Buffer.from(record.contents, 'base64');
-  const hmac = (record.hmac as { value: string }).value ?? record.hmac as string;
+  let hmac;
+  if (typeof record.hmac === 'object' && 'value' in record.hmac) {
+    hmac = record.hmac.value;
+  } else {
+    hmac = record.hmac;
+  }
   return openAesCtr(key, LEGACY_NONCE, ciphertext, hmac, digestMethod, record.name);
 };
